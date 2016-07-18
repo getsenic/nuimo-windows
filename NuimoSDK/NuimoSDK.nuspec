@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>NuimoSDK</id>
+    <version>1.1.1</version>
+    <title>NuimoSDK</title>
+    <authors>Patrick Völker</authors>
+    <owners>Senic GmbH</owners>
+    <licenseUrl>https://raw.githubusercontent.com/getsenic/nuimo-windows/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/getsenic/nuimo-windows</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Library for Windows 10 platforms to connect and communicate with Nuimo controllers made by Senic</description>
+    <releaseNotes>Release 1.1.1</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags></tags>
+  </metadata>
+</package>
