@@ -103,7 +103,7 @@ public class Demo
 
 #### A ready to checkout Windows Universal demo app
 
-We've provided a ready to checkout Universal Windows app that demonstrates listing paired Nuimos, connecting and receiving events from your Nuimo controllers. It also provides a simple UI for creating a matrix and send it to your Nuimo. Simply clone the [Nuimo Windows demo repository](https://github.com/getsenic/nuimo-windows-demo) and open it in Visual Studio. If your IDE shows errors, just build the project. Make sure to add Bluetooth capability to your Package.appxmanifest and manually pair your Nuimo (Windows -> Settings -> Devices -> Bluetooth).
+We've provided a ready to checkout Universal Windows app that demonstrates listing paired Nuimos, connecting and receiving events from your Nuimo controllers. It also provides a simple UI for creating a matrix and send it to your Nuimo. Simply clone the [Nuimo Windows demo repository](https://github.com/getsenic/nuimo-windows-demo) and open it in Visual Studio. If your IDE shows errors, just build the project. Make sure to add Bluetooth capability to your `Package.appxmanifest` and manually pair your Nuimo (Windows -> Settings -> Devices -> Bluetooth).
 
 ## Contact & Support
 
