@@ -21,7 +21,6 @@ namespace NuimoSDK
         void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, int options = 0);
     }
 
-
     public enum NuimoConnectionState
     {
         Disconnected,
@@ -29,7 +28,6 @@ namespace NuimoSDK
         Connected,
         Disconnecting,
     }
-
 
     public enum NuimoLedMatrixWriteOption
     {
