@@ -107,7 +107,7 @@ We've provided a ready to checkout Universal Windows app that demonstrates listi
 
 ## Contact & Support
 
-Have questions or suggestions? Drop us a mail at developers@senic.com. We'll be happy to hear from you.
+Have questions or suggestions? Drop us a mail at developers@senic.com or create an issue. We'll be happy to hear from you.
 
 ## License
 
