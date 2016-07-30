@@ -26,7 +26,7 @@ namespace NuimoSDK
         private NuimoConnectionState _connectionState = NuimoConnectionState.Disconnected;
         public NuimoConnectionState  ConnectionState {
             get { return _connectionState; }
-            set { _connectionState = value; DispatchOnMainAsync(() => ConnectionStateChanged?.Invoke(ConnectionState));}
+            set { _connectionState = value; ConnectionStateChanged?.Invoke(ConnectionState); }
         }
 
         private readonly BluetoothLEDevice _bluetoothLeDevice;
@@ -90,7 +90,7 @@ namespace NuimoSDK
         private bool SubscribeForCharacteristicNotifications()
         {
             var isConnected             = true;
-            var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(1000));
+            var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(5000));
             var cancellationToken       = cancellationTokenSource.Token;
             cancellationToken.Register(() => isConnected = false);
 
@@ -108,7 +108,7 @@ namespace NuimoSDK
         {
             if (sender.Uuid.Equals(CharacteristicsGuids.BatteryCharacteristicGuid))
             {
-                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(changedValue.CharacteristicValue.ToArray()[0]));
+                BatteryPercentageChanged?.Invoke(changedValue.CharacteristicValue.ToArray()[0]);
                 return;
             }
 
@@ -121,20 +121,23 @@ namespace NuimoSDK
                 case CharacteristicsGuids.FlyCharacteristicGuidString:      nuimoGestureEvent = changedValue.ToFlyEvent();      break;
                 default:                                                    nuimoGestureEvent = null;                           break;
             }
-            if (nuimoGestureEvent != null) DispatchOnMainAsync(() => GestureEventOccurred?.Invoke(nuimoGestureEvent));
+            if (nuimoGestureEvent != null)
+            {
+                GestureEventOccurred?.Invoke(nuimoGestureEvent);
+            }
         }
 
         private bool ReadFirmwareVersion()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid, bytes =>
-                DispatchOnMainAsync(() => FirmwareVersionRead?.Invoke(Encoding.ASCII.GetString(bytes)))
+                FirmwareVersionRead?.Invoke(Encoding.ASCII.GetString(bytes))
             );
         }
 
         private bool ReadBatteryLevel()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.BatteryCharacteristicGuid, bytes =>
-                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(bytes[0]))
+                BatteryPercentageChanged?.Invoke(bytes[0])
             );
         }
 
@@ -218,11 +221,6 @@ namespace NuimoSDK
                 }
                 _gattCharacteristicsForGuid.Clear();
             }
-        }
-
-        private async void DispatchOnMainAsync(DispatchedHandler dispatchedHandler)
-        {
-            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, dispatchedHandler);
         }
     }
 
