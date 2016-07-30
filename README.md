@@ -32,19 +32,22 @@ The following code example demonstrates how to list paired Nuimos, connect a Nui
 
 ```C#
 using NuimoSDK;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
-public class Demo
+class Demo
 {
 	private readonly PairedNuimoManager _pairedNuimoManager = new PairedNuimoManager();
 	private INuimoController _nuimoController;
 
-	private async void GetPairedNuimos()
+	private async Task GetPairedNuimos()
 	{
 		var nuimoControllers = await _pairedNuimoManager.ListPairedNuimosAsync();
 		_nuimoController = nuimoControllers.ElementAt(0);
 	}
 
-	private async void Connect()
+	private async Task Connect()
 	{
 		var isConnected = await _nuimoController.ConnectAsync();
 	}
@@ -58,6 +61,7 @@ public class Demo
 		_nuimoController.LedMatrixDisplayed       += OnLedMatrixDisplayed;
 	}
 
+	#region delegates
 	private void OnNuimoGestureEvent(NuimoGestureEvent nuimoGestureEvent)
 	{
 		Debug.WriteLine("Event: " + nuimoGestureEvent.Gesture + ", " + nuimoGestureEvent.Value);
@@ -73,6 +77,17 @@ public class Demo
 		Debug.WriteLine("Connection state: " + nuimoConnectionState);
 	}
 
+	private void OnBatteryPercentage(int batteryPercentage)
+	{
+		Debug.WriteLine("Battery percentage: " + batteryPercentage);
+	}
+
+	private void OnLedMatrixDisplayed()
+	{
+		Debug.WriteLine("LED matrix displayed");
+	}
+	#endregion
+
 	private void SendMatrix()
 	{
 		var displayInterval = 5.0;
@@ -87,16 +102,6 @@ public class Demo
 			"         " +
 			"         ";
 		_nuimoController?.DisplayLedMatrixAsync(new NuimoLedMatrix(matrixString), displayInterval, (int)NuimoLedMatrixWriteOption.WithFadeTransition);
-	}
-
-	private void OnBatteryPercentage(int batteryPercentage)
-	{
-		Debug.WriteLine("Battery percentage: " + batteryPercentage);
-	}
-
-	private async void OnLedMatrixDisplayed()
-	{
-		Debug.WriteLine("LED matrix displayed");
 	}
 }
 ```
