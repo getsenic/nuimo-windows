@@ -61,7 +61,6 @@ class Demo
 		_nuimoController.LedMatrixDisplayed       += OnLedMatrixDisplayed;
 	}
 
-	#region delegates
 	private void OnNuimoGestureEvent(NuimoGestureEvent nuimoGestureEvent)
 	{
 		Debug.WriteLine("Event: " + nuimoGestureEvent.Gesture + ", " + nuimoGestureEvent.Value);
@@ -86,7 +85,6 @@ class Demo
 	{
 		Debug.WriteLine("LED matrix displayed");
 	}
-	#endregion
 
 	private void SendMatrix()
 	{
