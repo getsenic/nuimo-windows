@@ -14,11 +14,11 @@ namespace NuimoSDK
 {
     public class NuimoBluetoothController : INuimoController
     {
-        public event Action<NuimoConnectionState> ConnectionStateChanged;
-        public event Action<string>               FirmwareVersionRead;
-        public event Action                       LedMatrixDisplayed;
-        public event Action<int>                  BatteryPercentageChanged;
-        public event Action<NuimoGestureEvent>    GestureEventOccurred;
+        public event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
+        public event Action<INuimoController, string>               FirmwareVersionRead;
+        public event Action<INuimoController>                       LedMatrixDisplayed;
+        public event Action<INuimoController, int>                  BatteryPercentageChanged;
+        public event Action<INuimoController, NuimoGestureEvent>    GestureEventOccurred;
 
         public string Identifier                    => _bluetoothLeDevice.DeviceId.Substring(14, 12);
         public float  MatrixBrightness { get; set; } = 1.0f;
@@ -177,7 +177,7 @@ namespace NuimoSDK
             {
                 // ReSharper disable once InconsistentlySynchronizedField
                 var gattWriteResponse = await _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid].WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithResponse);
-                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke();
+                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke(this);
             }
         }
 
