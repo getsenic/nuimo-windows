@@ -14,11 +14,11 @@ namespace NuimoSDK
 {
     public class NuimoBluetoothController : INuimoController
     {
-        public event Action<NuimoConnectionState> ConnectionStateChanged;
-        public event Action<string>               FirmwareVersionRead;
-        public event Action                       LedMatrixDisplayed;
-        public event Action<int>                  BatteryPercentageChanged;
-        public event Action<NuimoGestureEvent>    GestureEventOccurred;
+        public event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
+        public event Action<INuimoController, string>               FirmwareVersionRead;
+        public event Action<INuimoController>                       LedMatrixDisplayed;
+        public event Action<INuimoController, int>                  BatteryPercentageChanged;
+        public event Action<INuimoController, NuimoGestureEvent>    GestureEventOccurred;
 
         public string Identifier                    => _bluetoothLeDevice.DeviceId.Substring(14, 12);
         public float  MatrixBrightness { get; set; } = 1.0f;
@@ -26,7 +26,7 @@ namespace NuimoSDK
         private NuimoConnectionState _connectionState = NuimoConnectionState.Disconnected;
         public NuimoConnectionState  ConnectionState {
             get { return _connectionState; }
-            set { _connectionState = value; DispatchOnMainAsync(() => ConnectionStateChanged?.Invoke(ConnectionState));}
+            set { _connectionState = value; DispatchOnMainAsync(() => ConnectionStateChanged?.Invoke(this, ConnectionState));}
         }
 
         private readonly BluetoothLEDevice _bluetoothLeDevice;
@@ -108,7 +108,7 @@ namespace NuimoSDK
         {
             if (sender.Uuid.Equals(CharacteristicsGuids.BatteryCharacteristicGuid))
             {
-                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(changedValue.CharacteristicValue.ToArray()[0]));
+                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(this, changedValue.CharacteristicValue.ToArray()[0]));
                 return;
             }
 
@@ -121,20 +121,20 @@ namespace NuimoSDK
                 case CharacteristicsGuids.FlyCharacteristicGuidString:      nuimoGestureEvent = changedValue.ToFlyEvent();      break;
                 default:                                                    nuimoGestureEvent = null;                           break;
             }
-            if (nuimoGestureEvent != null) DispatchOnMainAsync(() => GestureEventOccurred?.Invoke(nuimoGestureEvent));
+            if (nuimoGestureEvent != null) DispatchOnMainAsync(() => GestureEventOccurred?.Invoke(this, nuimoGestureEvent));
         }
 
         private bool ReadFirmwareVersion()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid, bytes =>
-                DispatchOnMainAsync(() => FirmwareVersionRead?.Invoke(Encoding.ASCII.GetString(bytes)))
+                DispatchOnMainAsync(() => FirmwareVersionRead?.Invoke(this, Encoding.ASCII.GetString(bytes)))
             );
         }
 
         private bool ReadBatteryLevel()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.BatteryCharacteristicGuid, bytes =>
-                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(bytes[0]))
+                DispatchOnMainAsync(() => BatteryPercentageChanged?.Invoke(this, bytes[0]))
             );
         }
 
@@ -176,7 +176,7 @@ namespace NuimoSDK
             {
                 // ReSharper disable once InconsistentlySynchronizedField
                 var gattWriteResponse = await _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid].WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithResponse);
-                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke();
+                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke(this);
             }
         }
 
