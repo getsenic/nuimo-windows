@@ -127,7 +127,7 @@ namespace NuimoSDK
         private bool ReadFirmwareVersion()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid, bytes =>
-                DispatchOnMainAsync(() => FirmwareVersionRead?.Invoke(Encoding.ASCII.GetString(bytes)))
+                DispatchOnMainAsync(() => FirmwareVersionRead?.Invoke(Encoding.GetEncoding("1252").GetString(bytes, 0, bytes.Length)))
             );
         }
 
