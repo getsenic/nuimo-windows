@@ -19,6 +19,8 @@ namespace NuimoSDK
         Task<bool> DisconnectAsync();
 
         void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, int options = 0);
+        string GetFirmwareVersion();
+        bool GetBatteryLevel(out int batteryLevel);
     }
 
     public enum NuimoConnectionState

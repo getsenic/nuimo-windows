@@ -138,6 +138,23 @@ namespace NuimoSDK
             );
         }
 
+        public bool GetBatteryLevel(out int batteryLevel)
+        {
+            var battLvl = 0;
+            var success = ReadCharacteristicValue(CharacteristicsGuids.BatteryCharacteristicGuid, bytes => battLvl = bytes[0]);
+            batteryLevel = battLvl;
+            return success;
+        }
+
+        public bool GetFirmwareVersion(out string firmwareVersion)
+        {
+            string fwVer = null;
+            var success = ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid,
+                bytes => fwVer = Encoding.ASCII.GetString(bytes));
+            firmwareVersion = fwVer;
+            return success;
+        }
+
         private bool ReadCharacteristicValue(Guid characteristicGuid, Action<byte[]> onValueRead)
         {
             var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(1000));
