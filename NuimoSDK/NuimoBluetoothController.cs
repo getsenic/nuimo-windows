@@ -121,10 +121,8 @@ namespace NuimoSDK
                 case CharacteristicsGuids.FlyCharacteristicGuidString:      nuimoGestureEvent = changedValue.ToFlyEvent();      break;
                 default:                                                    nuimoGestureEvent = null;                           break;
             }
-            if (nuimoGestureEvent != null)
-            {
-                GestureEventOccurred?.Invoke(nuimoGestureEvent);
-            }
+
+            if (nuimoGestureEvent != null) { GestureEventOccurred?.Invoke(nuimoGestureEvent); }
         }
 
         private bool ReadFirmwareVersion()
