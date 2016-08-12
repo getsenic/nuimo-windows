@@ -36,69 +36,69 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-    public class Demo
-    {
-        private readonly PairedNuimoManager _pairedNuimoManager = new PairedNuimoManager();
-        private INuimoController _nuimoController;
+public class Demo
+{
+	private readonly PairedNuimoManager _pairedNuimoManager = new PairedNuimoManager();
+	private INuimoController _nuimoController;
 
-        private async void GetPairedNuimos()
-        {
-            var nuimoControllers = await _pairedNuimoManager.ListPairedNuimosAsync();
-            _nuimoController = nuimoControllers.ElementAt(0);
-        }
+	private async void GetPairedNuimos()
+	{
+		var nuimoControllers = await _pairedNuimoManager.ListPairedNuimosAsync();
+		_nuimoController = nuimoControllers.ElementAt(0);
+	}
 
-        private async void Connect()
-        {
-            var isConnected = await _nuimoController.ConnectAsync();
-        }
+	private async void Connect()
+	{
+		var isConnected = await _nuimoController.ConnectAsync();
+	}
 
-        private void AddDelegates()
-        {
-            _nuimoController.GestureEventOccurred += OnNuimoGestureEvent;
-            _nuimoController.FirmwareVersionRead += OnFirmwareVersion;
-            _nuimoController.ConnectionStateChanged += OnConnectionState;
-            _nuimoController.BatteryPercentageChanged += OnBatteryPercentage;
-            _nuimoController.LedMatrixDisplayed += OnLedMatrixDisplayed;
-        }
+	private void AddDelegates()
+	{
+		_nuimoController.GestureEventOccurred += OnNuimoGestureEvent;
+		_nuimoController.FirmwareVersionRead += OnFirmwareVersion;
+		_nuimoController.ConnectionStateChanged += OnConnectionState;
+		_nuimoController.BatteryPercentageChanged += OnBatteryPercentage;
+		_nuimoController.LedMatrixDisplayed += OnLedMatrixDisplayed;
+	}
 
-        private void OnNuimoGestureEvent(INuimoController controller, NuimoGestureEvent nuimoGestureEvent)
-        {
-            Debug.WriteLine("Event: " + nuimoGestureEvent.Gesture + ", " + nuimoGestureEvent.Value);
-        }
+	private void OnNuimoGestureEvent(INuimoController controller, NuimoGestureEvent nuimoGestureEvent)
+	{
+		Debug.WriteLine("Event: " + nuimoGestureEvent.Gesture + ", " + nuimoGestureEvent.Value);
+	}
 
-        private void OnFirmwareVersion(INuimoController controller, string firmwareVersion)
-        {
-            Debug.WriteLine(firmwareVersion);
-        }
+	private void OnFirmwareVersion(INuimoController controller, string firmwareVersion)
+	{
+		Debug.WriteLine(firmwareVersion);
+	}
 
-        private void OnConnectionState(INuimoController controller, NuimoConnectionState nuimoConnectionState)
-        {
-            Debug.WriteLine("Connection state: " + nuimoConnectionState);
+	private void OnConnectionState(INuimoController controller, NuimoConnectionState nuimoConnectionState)
+	{
+		Debug.WriteLine("Connection state: " + nuimoConnectionState);
 
-            var displayInterval = 5.0;
-            var matrixString = "         " +
-                                    "         " +
-                                    " ..   .. " +
-                                    "   . .   " +
-                                    "    .    " +
-                                    "   . .   " +
-                                    " ..   .. " +
-                                    "         " +
-                                    "         ";
-            var options = 2;
-            _nuimoController?.DisplayLedMatrixAsync(new NuimoLedMatrix(matrixString), displayInterval, options);
-        }
+		var displayInterval = 5.0;
+		var matrixString = "         " +
+								"         " +
+								" ..   .. " +
+								"   . .   " +
+								"    .    " +
+								"   . .   " +
+								" ..   .. " +
+								"         " +
+								"         ";
+		var options = 2;
+		_nuimoController?.DisplayLedMatrixAsync(new NuimoLedMatrix(matrixString), displayInterval, options);
+	}
 
-        private void OnBatteryPercentage(INuimoController controller, int batteryPercentage)
-        {
-            Debug.WriteLine("Battery percentage: " + batteryPercentage);
-        }
+	private void OnBatteryPercentage(INuimoController controller, int batteryPercentage)
+	{
+		Debug.WriteLine("Battery percentage: " + batteryPercentage);
+	}
 
-        private async void OnLedMatrixDisplayed(INuimoController controller)
-        {
-            Debug.WriteLine("LED matrix displayed");
-        }
-    }
+	private async void OnLedMatrixDisplayed(INuimoController controller)
+	{
+		Debug.WriteLine("LED matrix displayed");
+	}
+}
 ```
 
 #### A ready to checkout Windows Universal demo app
