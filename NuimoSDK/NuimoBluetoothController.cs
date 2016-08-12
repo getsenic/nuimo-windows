@@ -26,7 +26,7 @@ namespace NuimoSDK
         private NuimoConnectionState _connectionState = NuimoConnectionState.Disconnected;
         public NuimoConnectionState  ConnectionState {
             get { return _connectionState; }
-            set { _connectionState = value; ConnectionStateChanged?.Invoke(ConnectionState); }
+            set { _connectionState = value; ConnectionStateChanged?.Invoke(this, ConnectionState); }
         }
 
         private readonly BluetoothLEDevice _bluetoothLeDevice;
@@ -108,7 +108,7 @@ namespace NuimoSDK
         {
             if (sender.Uuid.Equals(CharacteristicsGuids.BatteryCharacteristicGuid))
             {
-                BatteryPercentageChanged?.Invoke(changedValue.CharacteristicValue.ToArray()[0]);
+                BatteryPercentageChanged?.Invoke(this, changedValue.CharacteristicValue.ToArray()[0]);
                 return;
             }
 
@@ -122,20 +122,20 @@ namespace NuimoSDK
                 default:                                                    nuimoGestureEvent = null;                           break;
             }
 
-            if (nuimoGestureEvent != null) { GestureEventOccurred?.Invoke(nuimoGestureEvent); }
+            if (nuimoGestureEvent != null) { GestureEventOccurred?.Invoke(this, nuimoGestureEvent); }
         }
 
         private bool ReadFirmwareVersion()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid, bytes =>
-                FirmwareVersionRead?.Invoke(Encoding.ASCII.GetString(bytes))
+                FirmwareVersionRead?.Invoke(this, Encoding.ASCII.GetString(bytes))
             );
         }
 
         private bool ReadBatteryLevel()
         {
             return ReadCharacteristicValue(CharacteristicsGuids.BatteryCharacteristicGuid, bytes =>
-                BatteryPercentageChanged?.Invoke(bytes[0])
+                BatteryPercentageChanged?.Invoke(this, bytes[0])
             );
         }
 
