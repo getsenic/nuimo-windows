@@ -18,7 +18,7 @@ namespace NuimoSDK
         Task<bool> ConnectAsync();
         Task<bool> DisconnectAsync();
 
-        void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, NuimoLedMatrixWriteOption options = NuimoLedMatrixWriteOption.None);
+        void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None);
     }
 
     public enum NuimoConnectionState
@@ -30,7 +30,7 @@ namespace NuimoSDK
     }
     
     [Flags]
-    public enum NuimoLedMatrixWriteOption
+    public enum NuimoLedMatrixWriteOptions
     {
         None                 = 0,
         WithFadeTransition   = 1,

@@ -153,12 +153,12 @@ namespace NuimoSDK
             return !readResult.IsCanceled;
         }
 
-        public async void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, NuimoLedMatrixWriteOption options = NuimoLedMatrixWriteOption.None)
+        public async void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None)
         {
             if (ConnectionState != NuimoConnectionState.Connected) return;
 
-            var withFadeTransition   = options.HasFlag(NuimoLedMatrixWriteOption.WithFadeTransition);
-            var writeWithoutResponse = options.HasFlag(NuimoLedMatrixWriteOption.WithoutWriteResponse);
+            var withFadeTransition   = options.HasFlag(NuimoLedMatrixWriteOptions.WithFadeTransition);
+            var writeWithoutResponse = options.HasFlag(NuimoLedMatrixWriteOptions.WithoutWriteResponse);
 
             var byteArray = new byte[13];
             matrix.GattBytes().CopyTo(byteArray, 0);
