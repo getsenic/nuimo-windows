@@ -61,27 +61,27 @@ class Demo
 		_nuimoController.LedMatrixDisplayed       += OnLedMatrixDisplayed;
 	}
 
-	private void OnNuimoGestureEvent(NuimoGestureEvent nuimoGestureEvent)
+	private void OnNuimoGestureEvent(INuimoController sender, NuimoGestureEvent nuimoGestureEvent)
 	{
 		Debug.WriteLine("Event: " + nuimoGestureEvent.Gesture + ", " + nuimoGestureEvent.Value);
 	}
 
-	private void OnFirmwareVersion(string firmwareVersion)
+	private void OnFirmwareVersion(INuimoController sender, string firmwareVersion)
 	{
 		Debug.WriteLine(firmwareVersion);
 	}
 
-	private void OnConnectionState(NuimoConnectionState nuimoConnectionState)
+	private void OnConnectionState(INuimoController sender, NuimoConnectionState nuimoConnectionState)
 	{
 		Debug.WriteLine("Connection state: " + nuimoConnectionState);
 	}
 
-	private void OnBatteryPercentage(int batteryPercentage)
+	private void OnBatteryPercentage(INuimoController sender, int batteryPercentage)
 	{
 		Debug.WriteLine("Battery percentage: " + batteryPercentage);
 	}
 
-	private void OnLedMatrixDisplayed()
+	private void OnLedMatrixDisplayed(INuimoController sender)
 	{
 		Debug.WriteLine("LED matrix displayed");
 	}
