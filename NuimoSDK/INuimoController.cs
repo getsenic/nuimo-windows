@@ -5,11 +5,11 @@ namespace NuimoSDK
 {
     public interface INuimoController
     {
-        event Action<NuimoConnectionState> ConnectionStateChanged;
-        event Action<string>               FirmwareVersionRead;
-        event Action                       LedMatrixDisplayed;
-        event Action<int>                  BatteryPercentageChanged;
-        event Action<NuimoGestureEvent>    GestureEventOccurred;
+        event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
+        event Action<INuimoController, string>               FirmwareVersionRead;
+        event Action<INuimoController>                       LedMatrixDisplayed;
+        event Action<INuimoController, int>                  BatteryPercentageChanged;
+        event Action<INuimoController, NuimoGestureEvent>    GestureEventOccurred;
 
         string                             Identifier       { get;}
         NuimoConnectionState               ConnectionState  { get;}
