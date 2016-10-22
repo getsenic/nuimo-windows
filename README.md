@@ -99,7 +99,7 @@ class Demo
 			" ..   .. " +
 			"         " +
 			"         ";
-		_nuimoController?.DisplayLedMatrixAsync(new NuimoLedMatrix(matrixString), displayInterval, NuimoLedMatrixWriteOption.WithFadeTransition);
+		_nuimoController?.DisplayLedMatrixAsync(new NuimoLedMatrix(matrixString), displayInterval, NuimoLedMatrixWriteOptions.WithFadeTransition);
 	}
 }
 ```
