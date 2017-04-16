@@ -5,20 +5,22 @@ namespace NuimoSDK
 {
     public interface INuimoController
     {
+        string Identifier { get; }
+        NuimoConnectionState ConnectionState { get; }
+        float MatrixBrightness { get; set; }
+        TimeSpan ThrottlePeriod { get; set; }
         event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
-        event Action<INuimoController, string>               FirmwareVersionRead;
-        event Action<INuimoController>                       LedMatrixDisplayed;
-        event Action<INuimoController, int>                  BatteryPercentageChanged;
-        event Action<INuimoController, NuimoGestureEvent>    GestureEventOccurred;
-
-        string                             Identifier       { get;}
-        NuimoConnectionState               ConnectionState  { get;}
-        float                              MatrixBrightness { get; set; }
+        event Action<INuimoController, string> FirmwareVersionRead;
+        event Action<INuimoController> LedMatrixDisplayed;
+        event Action<INuimoController, int> BatteryPercentageChanged;
+        event Action<INuimoController, NuimoGestureEvent> GestureEventOccurred;
+        event Action<INuimoController, NuimoGestureEvent> ThrottledGestureEventOccurred;
 
         Task<bool> ConnectAsync();
         Task<bool> DisconnectAsync();
 
-        void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0, NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None);
+        void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0,
+            NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None);
     }
 
     public enum NuimoConnectionState
@@ -26,14 +28,14 @@ namespace NuimoSDK
         Disconnected,
         Connecting,
         Connected,
-        Disconnecting,
+        Disconnecting
     }
-    
+
     [Flags]
     public enum NuimoLedMatrixWriteOptions
     {
-        None                 = 0,
-        WithFadeTransition   = 1,
+        None = 0,
+        WithFadeTransition = 1,
         WithoutWriteResponse = 2
     }
 }

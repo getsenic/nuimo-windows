@@ -2,14 +2,14 @@ namespace NuimoSDK
 {
     public class NuimoGestureEvent
     {
-        public NuimoGesture Gesture { get; }
-        public int          Value   { get; }
-
         public NuimoGestureEvent(NuimoGesture gesture, int value)
         {
             Gesture = gesture;
-            Value   = value;
+            Value = value;
         }
+
+        public NuimoGesture Gesture { get; }
+        public int Value { get; }
     }
 
     public enum NuimoGesture
@@ -25,6 +25,6 @@ namespace NuimoSDK
         FlyRight,
         FlyBackwards,
         FlyTowards,
-        FlyUpDown,
+        FlyUpDown
     }
 }
