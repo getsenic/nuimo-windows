@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -35,14 +36,66 @@ namespace NuimoSDK
         }
 
         public event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
+        public event Action<INuimoController, string> HardwareVersionRead;
         public event Action<INuimoController, string> FirmwareVersionRead;
+        public event Action<INuimoController, NuimoColor> ColorRead;
         public event Action<INuimoController> LedMatrixDisplayed;
         public event Action<INuimoController, int> BatteryPercentageChanged;
+        public event Action<INuimoController, object> HeartbeatReceived;
         public event Action<INuimoController, NuimoGestureEvent> GestureEventOccurred;
         public event Action<INuimoController, NuimoGestureEvent> ThrottledGestureEventOccurred;
 
+        public bool SupportsRebootToDfuMode =>
+            _gattCharacteristicsForGuid.ContainsKey(CharacteristicsGuids.RebootToDfuModeCharacteristicGuid);
+        public bool SupportsFlySensorCalibration =>
+            _gattCharacteristicsForGuid.ContainsKey(CharacteristicsGuids.FlySensorCalibrationCharacteristicGuid);
+
+
         public string Identifier => _bluetoothLeDevice.DeviceId.Substring(14, 12);
         public float MatrixBrightness { get; set; } = 1.0f;
+
+        private TimeSpan _heartbeatInterval;
+
+        public TimeSpan HeartBeatInterval
+        {
+            get
+            {
+                return _heartbeatInterval;
+            }
+            set
+            {
+                _heartbeatInterval = value;
+                WriteHeartbeatInterval();
+            }
+        }
+
+        private void WriteHeartbeatInterval()
+        {
+            var interval = (byte)Math.Max(0, Math.Min(255, _heartbeatInterval.TotalSeconds));
+            if (!_gattCharacteristicsForGuid.ContainsKey(CharacteristicsGuids.HeartBeatCharacteristicGuid))
+            {
+                Debug.WriteLine("Heartbeat characteristic not found. Are you connected to Nuimo?");
+                return;
+            }
+
+            _gattCharacteristicsForGuid[CharacteristicsGuids.HeartBeatCharacteristicGuid]
+                .WriteValueAsync(new byte[] { interval }.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+        }
+
+        public void RebootToDfu()
+        {
+            var value = (byte)1;
+            _gattCharacteristicsForGuid[CharacteristicsGuids.RebootToDfuModeCharacteristicGuid]
+                .WriteValueAsync(new byte[] { value }.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+        }
+
+        public void CalibrateFlySensor()
+        {
+            var value = (byte)1;
+            _gattCharacteristicsForGuid[CharacteristicsGuids.FlySensorCalibrationCharacteristicGuid]
+                .WriteValueAsync(new byte[] { value }.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+        }
+
         public TimeSpan ThrottlePeriod { get; set; } = TimeSpan.FromSeconds(0.7);
 
         public NuimoConnectionState ConnectionState
@@ -132,8 +185,8 @@ namespace NuimoSDK
 
                 lock (_gattCharacteristicsLock)
                 {
-                    AddCharacteristics(ServiceGuids.SensorsServiceGuid);
-                    AddCharacteristics(ServiceGuids.LedMatrixServiceGuid);
+                    AddCharacteristics(ServiceGuids.NuimoServiceGuid);
+                    AddCharacteristics(ServiceGuids.LegacyLedMatrixServiceGuid);
                     AddCharacteristics(ServiceGuids.BatteryServiceGuid);
                     AddCharacteristics(ServiceGuids.DeviceInformationServiceGuid);
 
@@ -168,7 +221,11 @@ namespace NuimoSDK
 
         private bool EstablishConnection()
         {
-            return SubscribeForCharacteristicNotifications() && ReadFirmwareVersion() && ReadBatteryLevel();
+            return SubscribeForCharacteristicNotifications()
+                && ReadFirmwareVersion()
+                && ReadHardwareVersion()
+                && ReadColor()
+                && ReadBatteryLevel();
         }
 
         private bool SubscribeForCharacteristicNotifications()
@@ -193,6 +250,12 @@ namespace NuimoSDK
             if (sender.Uuid.Equals(CharacteristicsGuids.BatteryCharacteristicGuid))
             {
                 BatteryPercentageChanged?.Invoke(this, changedValue.CharacteristicValue.ToArray()[0]);
+                return;
+            }
+
+            if (sender.Uuid.Equals(CharacteristicsGuids.HeartBeatCharacteristicGuid))
+            {
+                HeartbeatReceived?.Invoke(this, changedValue.CharacteristicValue);
                 return;
             }
 
@@ -231,7 +294,7 @@ namespace NuimoSDK
                     if (!_isThrottling)
                     {
                         _isThrottling = true;
-                        _throttleTimer = new Timer(ThrottleTimeout, null, (int) ThrottlePeriod.TotalMilliseconds,
+                        _throttleTimer = new Timer(ThrottleTimeout, null, (int)ThrottlePeriod.TotalMilliseconds,
                             Timeout.Infinite);
                     }
                     _throttledValue += gestureEvent.Value;
@@ -252,8 +315,24 @@ namespace NuimoSDK
 
         private bool ReadFirmwareVersion()
         {
-            return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionGuid, bytes =>
+            return ReadCharacteristicValue(CharacteristicsGuids.FirmwareVersionCharacteristicGuid, bytes =>
                 FirmwareVersionRead?.Invoke(this, Encoding.GetEncoding("ASCII").GetString(bytes, 0, bytes.Length))
+            );
+        }
+
+        private bool ReadHardwareVersion()
+        {
+            return ReadCharacteristicValue(CharacteristicsGuids.HardwareVersionCharacteristicGuid, bytes =>
+                HardwareVersionRead?.Invoke(this, Encoding.GetEncoding("ASCII").GetString(bytes, 0, bytes.Length))
+            );
+        }
+
+        private bool ReadColor()
+        {
+            return ReadCharacteristicValue(CharacteristicsGuids.ModelNumberCharacteristicGuid, bytes =>
+                ColorRead?.Invoke(this, (NuimoColor)Enum.Parse(
+                    typeof(NuimoColor),
+                    Encoding.GetEncoding("ASCII").GetString(bytes, 0, bytes.Length)))
             );
         }
 
@@ -398,8 +477,8 @@ namespace NuimoSDK
     {
         internal static readonly Guid BatteryServiceGuid = new Guid("0000180f-0000-1000-8000-00805f9b34fb");
         internal static readonly Guid DeviceInformationServiceGuid = new Guid("0000180A-0000-1000-8000-00805F9B34FB");
-        internal static readonly Guid SensorsServiceGuid = new Guid("f29b1525-cb19-40f3-be5c-7241ecb82fd2");
-        internal static readonly Guid LedMatrixServiceGuid = new Guid("f29b1523-cb19-40f3-be5c-7241ecb82fd1");
+        internal static readonly Guid NuimoServiceGuid = new Guid("f29b1525-cb19-40f3-be5c-7241ecb82fd2");
+        internal static readonly Guid LegacyLedMatrixServiceGuid = new Guid("f29b1523-cb19-40f3-be5c-7241ecb82fd1");
     }
 
     internal static class CharacteristicsGuids
@@ -408,13 +487,25 @@ namespace NuimoSDK
         internal const string RotationCharacteristicGuidString = "f29b1528-cb19-40f3-be5c-7241ecb82fd2";
         internal const string SwipeTouchCharacteristicGuidString = "f29b1527-cb19-40f3-be5c-7241ecb82fd2";
         internal const string FlyCharacteristicGuidString = "f29b1526-cb19-40f3-be5c-7241ecb82fd2";
+
         internal static readonly Guid BatteryCharacteristicGuid = new Guid("00002a19-0000-1000-8000-00805f9b34fb");
 
         internal static readonly Guid DeviceInformationCharacteristicGuid =
             new Guid("00002A29-0000-1000-8000-00805F9B34FB");
+        internal static readonly Guid HardwareVersionCharacteristicGuid =
+            new Guid("00002A27-0000-1000-8000-00805F9B34FB");
+        internal static readonly Guid ModelNumberCharacteristicGuid =
+            new Guid("00002A24-0000-1000-8000-00805F9B34FB");
+        internal static readonly Guid FirmwareVersionCharacteristicGuid = new Guid("00002a26-0000-1000-8000-00805f9b34fb");
 
-        internal static readonly Guid FirmwareVersionGuid = new Guid("00002a26-0000-1000-8000-00805f9b34fb");
-        internal static readonly Guid LedMatrixCharacteristicGuid = new Guid("f29b1524-cb19-40f3-be5c-7241ecb82fd1");
+        internal static readonly Guid HeartBeatCharacteristicGuid =
+            new Guid("F29B152B-CB19-40F3-BE5C-7241ECB82FD2");
+        internal static readonly Guid RebootToDfuModeCharacteristicGuid =
+            new Guid("F29B152A-CB19-40F3-BE5C-7241ECB82FD2");
+        internal static readonly Guid FlySensorCalibrationCharacteristicGuid =
+            new Guid("F29B152C-CB19-40F3-BE5C-7241ECB82FD2");
+        internal static readonly Guid LegacyLedMatrixCharacteristicGuid = new Guid("f29b1524-cb19-40f3-be5c-7241ecb82fd1");
+        internal static readonly Guid LedMatrixCharacteristicGuid = new Guid("f29b152d-cb19-40f3-be5c-7241ecb82fd2");
 
         private static readonly Guid ButtonCharacteristicGuid = new Guid("f29b1529-cb19-40f3-be5c-7241ecb82fd2");
         private static readonly Guid RotationCharacteristicGuid = new Guid("f29b1528-cb19-40f3-be5c-7241ecb82fd2");
@@ -435,7 +526,8 @@ namespace NuimoSDK
             SwipeTouchCharacteristicGuid,
             RotationCharacteristicGuid,
             FlyCharacteristicGuid,
-            BatteryCharacteristicGuid
+            BatteryCharacteristicGuid,
+            HeartBeatCharacteristicGuid
         };
     }
 }

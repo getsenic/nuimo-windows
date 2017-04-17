@@ -9,10 +9,21 @@ namespace NuimoSDK
         NuimoConnectionState ConnectionState { get; }
         float MatrixBrightness { get; set; }
         TimeSpan ThrottlePeriod { get; set; }
+        TimeSpan HeartBeatInterval { get; set; }
+
+        bool SupportsRebootToDfuMode { get; }
+        bool SupportsFlySensorCalibration { get; }
+
+        void RebootToDfu();
+        void CalibrateFlySensor();
+
         event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
+        event Action<INuimoController, string> HardwareVersionRead;
         event Action<INuimoController, string> FirmwareVersionRead;
+        event Action<INuimoController, NuimoColor> ColorRead;
         event Action<INuimoController> LedMatrixDisplayed;
         event Action<INuimoController, int> BatteryPercentageChanged;
+         event Action<INuimoController, object> HeartbeatReceived;
         event Action<INuimoController, NuimoGestureEvent> GestureEventOccurred;
         event Action<INuimoController, NuimoGestureEvent> ThrottledGestureEventOccurred;
 

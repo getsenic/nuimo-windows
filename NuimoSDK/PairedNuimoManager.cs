@@ -53,7 +53,7 @@ namespace NuimoSDK
         {
             return await Task.WhenAll(
                 (await DeviceInformation.FindAllAsync(
-                    GattDeviceService.GetDeviceSelectorFromUuid(ServiceGuids.LedMatrixServiceGuid), null))
+                    GattDeviceService.GetDeviceSelectorFromUuid(ServiceGuids.NuimoServiceGuid), null))
                 .Select(async deviceInformation =>
                     new NuimoBluetoothController(deviceInformation.Id) as INuimoController)
             );

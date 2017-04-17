@@ -39,4 +39,12 @@ namespace NuimoSDK
         FlyTowards,
         FlyUpDown
     }
+
+    public enum NuimoColor
+    {
+        Unknown,
+        Black,
+        //TODO White or Silver?
+        Silver
+    }
 }
