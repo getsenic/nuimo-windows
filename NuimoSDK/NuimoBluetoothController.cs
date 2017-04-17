@@ -13,8 +13,11 @@ namespace NuimoSDK
 {
     public class NuimoBluetoothController : INuimoController
     {
-        private readonly BluetoothLEDevice _bluetoothLeDevice;
+        private readonly string _deviceId;
+        private BluetoothLEDevice _bluetoothLeDevice;
 
+        private Dictionary<Guid, GattDeviceService> _gattServicesForGuid =
+            new Dictionary<Guid, GattDeviceService>();
         private readonly Dictionary<Guid, GattCharacteristic> _gattCharacteristicsForGuid =
             new Dictionary<Guid, GattCharacteristic>();
 
@@ -24,10 +27,9 @@ namespace NuimoSDK
         private int _throttledValue;
         private Timer _throttleTimer;
 
-        public NuimoBluetoothController(BluetoothLEDevice bluetoothLeDevice)
+        public NuimoBluetoothController(string deviceId)
         {
-            _bluetoothLeDevice = bluetoothLeDevice;
-            _bluetoothLeDevice.ConnectionStatusChanged += OnConnectionStateChanged;
+            _deviceId = deviceId;
         }
 
         public event Action<INuimoController, NuimoConnectionState> ConnectionStateChanged;
@@ -69,20 +71,27 @@ namespace NuimoSDK
             var isConnected = false;
             await Task.Run(async () =>
             {
+                _bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(_deviceId);
+                _bluetoothLeDevice.ConnectionStatusChanged += OnConnectionStateChanged;
+
                 var accessStatus = await _bluetoothLeDevice.RequestAccessAsync();
                 if (accessStatus != DeviceAccessStatus.Allowed)
                     return;
 
+                GattDeviceServicesResult result = await _bluetoothLeDevice.GetGattServicesAsync();
+                if (result.Status == GattCommunicationStatus.Success)
+                {
+                    var services = result.Services;
+                    _gattServicesForGuid = services.ToDictionary(service => service.Uuid);
+                }
+
                 lock (_gattCharacteristicsLock)
                 {
-                    AddCharacteristics(ServiceGuids.SensorsServiceGuid,
-                        CharacteristicsGuids.GestureCharacteristicGuids);
-                    AddCharacteristics(ServiceGuids.LedMatrixServiceGuid,
-                        new[] {CharacteristicsGuids.LedMatrixCharacteristicGuid});
-                    AddCharacteristics(ServiceGuids.BatteryServiceGuid,
-                        new[] {CharacteristicsGuids.BatteryCharacteristicGuid});
-                    AddCharacteristics(ServiceGuids.DeviceInformationServiceGuid,
-                        new[] {CharacteristicsGuids.FirmwareVersionGuid});
+                    
+                    AddCharacteristics(ServiceGuids.SensorsServiceGuid);
+                    AddCharacteristics(ServiceGuids.LedMatrixServiceGuid);
+                    AddCharacteristics(ServiceGuids.BatteryServiceGuid);
+                    AddCharacteristics(ServiceGuids.DeviceInformationServiceGuid);
 
                     isConnected = EstablishConnection() && _bluetoothLeDevice.ConnectionStatus ==
                                   BluetoothConnectionStatus.Connected;
@@ -94,23 +103,22 @@ namespace NuimoSDK
             return isConnected;
         }
 
-        private async void AddCharacteristics(Guid serviceGuid, IEnumerable<Guid> characteristicGuids)
+        private async void AddCharacteristics(Guid serviceGuid)
         {
-            var servicesResult = await _bluetoothLeDevice.GetGattServicesForUuidAsync(serviceGuid);
-            var service = servicesResult.Services.FirstOrDefault();
-
+            var service = _gattServicesForGuid[serviceGuid];
             if (service == null)
                 return;
 
             var session = service.Session;
             session.MaintainConnection = true;
 
-            foreach (var characteristicGuid in characteristicGuids)
+            GattCharacteristicsResult result = await service.GetCharacteristicsAsync();
+            if (result.Status == GattCommunicationStatus.Success)
             {
-                var characteristicsResult = await service.GetCharacteristicsForUuidAsync(characteristicGuid);
-                var characteristic = characteristicsResult.Characteristics.FirstOrDefault();
-                if (characteristic != null)
-                    _gattCharacteristicsForGuid.Add(characteristicGuid, characteristic);
+                var characteristics = result.Characteristics;
+                characteristics.ToList()
+                    .ForEach(characteristic => 
+                        _gattCharacteristicsForGuid.Add(characteristic.Uuid, characteristic));
             }
         }
 
@@ -130,8 +138,8 @@ namespace NuimoSDK
                 .Select(guid => _gattCharacteristicsForGuid[guid])
                 .TakeWhile(characteristic => isConnected))
             {
-                characteristic.ValueChanged += BluetoothGattCallback;
                 characteristic.SetNotify(true, cancellationToken);
+                characteristic.ValueChanged += BluetoothGattCallback;
             }
             return isConnected;
         }
@@ -176,17 +184,13 @@ namespace NuimoSDK
             switch (gestureEvent.Gesture)
             {
                 case NuimoGesture.Rotate:
-                    if (_isThrottling)
-                    {
-                        _throttledValue += gestureEvent.Value;
-                    }
-                    else
+                    if (!_isThrottling)
                     {
                         _isThrottling = true;
                         _throttleTimer = new Timer(ThrottleTimeout, null, (int) ThrottlePeriod.TotalMilliseconds,
                             Timeout.Infinite);
-                        ThrottledGestureEventOccurred?.Invoke(this, gestureEvent);
                     }
+                    _throttledValue += gestureEvent.Value;
                     break;
                 default:
                     ThrottledGestureEventOccurred?.Invoke(this, gestureEvent);
@@ -290,6 +294,7 @@ namespace NuimoSDK
                     UnsubscribeFromCharacteristicNotifications();
                 }
             });
+            _bluetoothLeDevice.Dispose();
             ConnectionState = NuimoConnectionState.Disconnected;
         }
 

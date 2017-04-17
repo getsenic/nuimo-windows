@@ -35,8 +35,7 @@ namespace NuimoSDK
 
         private async void _deviceWatcher_Added(DeviceWatcher sender, DeviceInformation deviceInformation)
         {
-            var bleDevice = await BluetoothLEDevice.FromIdAsync(deviceInformation.Id);
-            var nuimo = new NuimoBluetoothController(bleDevice) as INuimoController;
+            var nuimo = new NuimoBluetoothController(deviceInformation.Id) as INuimoController;
             NuimoFound?.Invoke(nuimo);
         }
 
@@ -55,8 +54,8 @@ namespace NuimoSDK
             return await Task.WhenAll(
                 (await DeviceInformation.FindAllAsync(
                     GattDeviceService.GetDeviceSelectorFromUuid(ServiceGuids.LedMatrixServiceGuid), null))
-                .Select(async deviceInformation => await BluetoothLEDevice.FromIdAsync(deviceInformation.Id))
-                .Select(async device => new NuimoBluetoothController(await device) as INuimoController)
+                .Select(async deviceInformation =>
+                    new NuimoBluetoothController(deviceInformation.Id) as INuimoController)
             );
         }
     }
