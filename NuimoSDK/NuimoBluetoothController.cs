@@ -69,10 +69,12 @@ namespace NuimoSDK
 
             var withFadeTransition = options.HasFlag(NuimoLedMatrixWriteOptions.WithFadeTransition);
             var writeWithoutResponse = options.HasFlag(NuimoLedMatrixWriteOptions.WithoutWriteResponse);
+            var useBuiltinMatrix = matrix is NuimoBuiltinLedMatrix;
 
             var byteArray = new byte[13];
             matrix.GattBytes().CopyTo(byteArray, 0);
             byteArray[10] |= Convert.ToByte(withFadeTransition ? 1 << 4 : 0);
+            byteArray[10] |= Convert.ToByte(useBuiltinMatrix ? 1 << 5 : 0);
             byteArray[11] = Convert.ToByte(Math.Max(0, Math.Min(255, MatrixBrightness * 255)));
             byteArray[12] = Convert.ToByte(Math.Max(0, Math.Min(255, displayInterval * 10)));
 

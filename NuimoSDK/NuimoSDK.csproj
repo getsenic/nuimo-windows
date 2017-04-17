@@ -109,6 +109,7 @@
   <ItemGroup>
     <Compile Include="NuimoBluetoothController.cs" />
     <Compile Include="INuimoController.cs" />
+    <Compile Include="NuimoBuiltinLedMatrix.cs" />
     <Compile Include="NuimoGestureEvent.cs" />
     <Compile Include="NuimoLedMatrix.cs" />
     <Compile Include="PairedNuimoManager.cs" />

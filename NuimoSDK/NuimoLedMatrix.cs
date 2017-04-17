@@ -8,6 +8,10 @@ namespace NuimoSDK
         private const int LedCount = 81;
         private readonly char[] _ledOffCharacters = " 0".ToCharArray();
 
+        public NuimoLedMatrix()
+        {
+        }
+
         public NuimoLedMatrix(string pattern)
         {
             Leds = pattern
@@ -18,6 +22,6 @@ namespace NuimoSDK
                 .ToArray();
         }
 
-        public bool[] Leds { get; }
+        public bool[] Leds { get; protected set; }
     }
 }
