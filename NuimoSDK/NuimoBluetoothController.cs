@@ -14,15 +14,17 @@ namespace NuimoSDK
     public class NuimoBluetoothController : INuimoController
     {
         private readonly string _deviceId;
-        private BluetoothLEDevice _bluetoothLeDevice;
 
-        private Dictionary<Guid, GattDeviceService> _gattServicesForGuid =
-            new Dictionary<Guid, GattDeviceService>();
         private readonly Dictionary<Guid, GattCharacteristic> _gattCharacteristicsForGuid =
             new Dictionary<Guid, GattCharacteristic>();
 
         private readonly object _gattCharacteristicsLock = new object();
+        private BluetoothLEDevice _bluetoothLeDevice;
         private NuimoConnectionState _connectionState = NuimoConnectionState.Disconnected;
+
+        private Dictionary<Guid, GattDeviceService> _gattServicesForGuid =
+            new Dictionary<Guid, GattDeviceService>();
+
         private bool _isThrottling;
         private int _throttledValue;
         private Timer _throttleTimer;
@@ -60,6 +62,47 @@ namespace NuimoSDK
             return await InternalConnectAsync();
         }
 
+        public async void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0,
+            NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None)
+        {
+            if (ConnectionState != NuimoConnectionState.Connected) return;
+
+            var withFadeTransition = options.HasFlag(NuimoLedMatrixWriteOptions.WithFadeTransition);
+            var writeWithoutResponse = options.HasFlag(NuimoLedMatrixWriteOptions.WithoutWriteResponse);
+
+            var byteArray = new byte[13];
+            matrix.GattBytes().CopyTo(byteArray, 0);
+            byteArray[10] |= Convert.ToByte(withFadeTransition ? 1 << 4 : 0);
+            byteArray[11] = Convert.ToByte(Math.Max(0, Math.Min(255, MatrixBrightness * 255)));
+            byteArray[12] = Convert.ToByte(Math.Max(0, Math.Min(255, displayInterval * 10)));
+
+            if (writeWithoutResponse)
+            {
+#pragma warning disable CS4014
+                // Because this call is not awaited, execution of the current method continues before the call is completed
+                // ReSharper disable once InconsistentlySynchronizedField
+                _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid]
+                    .WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+#pragma warning restore CS4014
+            }
+            else
+            {
+                // ReSharper disable once InconsistentlySynchronizedField
+                var gattWriteResponse =
+                    await _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid]
+                        .WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithResponse);
+                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke(this);
+            }
+        }
+
+        public async Task<bool> DisconnectAsync()
+        {
+            if (ConnectionState == NuimoConnectionState.Disconnected ||
+                ConnectionState == NuimoConnectionState.Disconnecting) return false;
+            await InternalDisconnectAsync();
+            return true;
+        }
+
         private async void OnConnectionStateChanged(BluetoothLEDevice sender, object args)
         {
             if (sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected) await InternalDisconnectAsync();
@@ -78,7 +121,7 @@ namespace NuimoSDK
                 if (accessStatus != DeviceAccessStatus.Allowed)
                     return;
 
-                GattDeviceServicesResult result = await _bluetoothLeDevice.GetGattServicesAsync();
+                var result = await _bluetoothLeDevice.GetGattServicesAsync();
                 if (result.Status == GattCommunicationStatus.Success)
                 {
                     var services = result.Services;
@@ -87,7 +130,6 @@ namespace NuimoSDK
 
                 lock (_gattCharacteristicsLock)
                 {
-                    
                     AddCharacteristics(ServiceGuids.SensorsServiceGuid);
                     AddCharacteristics(ServiceGuids.LedMatrixServiceGuid);
                     AddCharacteristics(ServiceGuids.BatteryServiceGuid);
@@ -112,12 +154,12 @@ namespace NuimoSDK
             var session = service.Session;
             session.MaintainConnection = true;
 
-            GattCharacteristicsResult result = await service.GetCharacteristicsAsync();
+            var result = await service.GetCharacteristicsAsync();
             if (result.Status == GattCommunicationStatus.Success)
             {
                 var characteristics = result.Characteristics;
                 characteristics.ToList()
-                    .ForEach(characteristic => 
+                    .ForEach(characteristic =>
                         _gattCharacteristicsForGuid.Add(characteristic.Uuid, characteristic));
             }
         }
@@ -158,8 +200,8 @@ namespace NuimoSDK
                 case CharacteristicsGuids.ButtonCharacteristicGuidString:
                     nuimoGestureEvent = changedValue.ToButtonEvent();
                     break;
-                case CharacteristicsGuids.SwipeCharacteristicGuidString:
-                    nuimoGestureEvent = changedValue.ToSwipeEvent();
+                case CharacteristicsGuids.SwipeTouchCharacteristicGuidString:
+                    nuimoGestureEvent = changedValue.ToSwipeTouchEvent();
                     break;
                 case CharacteristicsGuids.RotationCharacteristicGuidString:
                     nuimoGestureEvent = changedValue.ToRotationEvent();
@@ -237,47 +279,6 @@ namespace NuimoSDK
             return !readResult.IsCanceled;
         }
 
-        public async void DisplayLedMatrixAsync(NuimoLedMatrix matrix, double displayInterval = 2.0,
-            NuimoLedMatrixWriteOptions options = NuimoLedMatrixWriteOptions.None)
-        {
-            if (ConnectionState != NuimoConnectionState.Connected) return;
-
-            var withFadeTransition = options.HasFlag(NuimoLedMatrixWriteOptions.WithFadeTransition);
-            var writeWithoutResponse = options.HasFlag(NuimoLedMatrixWriteOptions.WithoutWriteResponse);
-
-            var byteArray = new byte[13];
-            matrix.GattBytes().CopyTo(byteArray, 0);
-            byteArray[10] |= Convert.ToByte(withFadeTransition ? 1 << 4 : 0);
-            byteArray[11] = Convert.ToByte(Math.Max(0, Math.Min(255, MatrixBrightness * 255)));
-            byteArray[12] = Convert.ToByte(Math.Max(0, Math.Min(255, displayInterval * 10)));
-
-            if (writeWithoutResponse)
-            {
-#pragma warning disable CS4014
-                // Because this call is not awaited, execution of the current method continues before the call is completed
-                // ReSharper disable once InconsistentlySynchronizedField
-                _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid]
-                    .WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithoutResponse);
-#pragma warning restore CS4014
-            }
-            else
-            {
-                // ReSharper disable once InconsistentlySynchronizedField
-                var gattWriteResponse =
-                    await _gattCharacteristicsForGuid[CharacteristicsGuids.LedMatrixCharacteristicGuid]
-                        .WriteValueAsync(byteArray.AsBuffer(), GattWriteOption.WriteWithResponse);
-                if (gattWriteResponse == GattCommunicationStatus.Success) LedMatrixDisplayed?.Invoke(this);
-            }
-        }
-
-        public async Task<bool> DisconnectAsync()
-        {
-            if (ConnectionState == NuimoConnectionState.Disconnected ||
-                ConnectionState == NuimoConnectionState.Disconnecting) return false;
-            await InternalDisconnectAsync();
-            return true;
-        }
-
         private async Task InternalDisconnectAsync()
         {
             ConnectionState = NuimoConnectionState.Disconnecting;
@@ -329,7 +330,7 @@ namespace NuimoSDK
             return new NuimoGestureEvent(value == 1 ? NuimoGesture.ButtonPress : NuimoGesture.ButtonRelease, value);
         }
 
-        public static NuimoGestureEvent ToSwipeEvent(this GattValueChangedEventArgs changedValue)
+        public static NuimoGestureEvent ToSwipeTouchEvent(this GattValueChangedEventArgs changedValue)
         {
             var value = changedValue.CharacteristicValue.ToArray()[0];
             switch (value)
@@ -338,6 +339,14 @@ namespace NuimoSDK
                 case 1: return new NuimoGestureEvent(NuimoGesture.SwipeRight, value);
                 case 2: return new NuimoGestureEvent(NuimoGesture.SwipeUp, value);
                 case 3: return new NuimoGestureEvent(NuimoGesture.SwipeDown, value);
+                case 4: return new NuimoGestureEvent(NuimoGesture.TouchLeft, value);
+                case 5: return new NuimoGestureEvent(NuimoGesture.TouchRight, value);
+                case 6: return new NuimoGestureEvent(NuimoGesture.TouchTop, value);
+                case 7: return new NuimoGestureEvent(NuimoGesture.TouchBottom, value);
+                case 8: return new NuimoGestureEvent(NuimoGesture.LongTouchLeft, value);
+                case 9: return new NuimoGestureEvent(NuimoGesture.LongTouchRight, value);
+                case 10: return new NuimoGestureEvent(NuimoGesture.LongTouchTop, value);
+                case 11: return new NuimoGestureEvent(NuimoGesture.LongTouchBottom, value);
                 default: return null;
             }
         }
@@ -395,7 +404,7 @@ namespace NuimoSDK
     {
         internal const string ButtonCharacteristicGuidString = "f29b1529-cb19-40f3-be5c-7241ecb82fd2";
         internal const string RotationCharacteristicGuidString = "f29b1528-cb19-40f3-be5c-7241ecb82fd2";
-        internal const string SwipeCharacteristicGuidString = "f29b1527-cb19-40f3-be5c-7241ecb82fd2";
+        internal const string SwipeTouchCharacteristicGuidString = "f29b1527-cb19-40f3-be5c-7241ecb82fd2";
         internal const string FlyCharacteristicGuidString = "f29b1526-cb19-40f3-be5c-7241ecb82fd2";
         internal static readonly Guid BatteryCharacteristicGuid = new Guid("00002a19-0000-1000-8000-00805f9b34fb");
 
@@ -407,13 +416,13 @@ namespace NuimoSDK
 
         private static readonly Guid ButtonCharacteristicGuid = new Guid("f29b1529-cb19-40f3-be5c-7241ecb82fd2");
         private static readonly Guid RotationCharacteristicGuid = new Guid("f29b1528-cb19-40f3-be5c-7241ecb82fd2");
-        private static readonly Guid SwipeCharacteristicGuid = new Guid("f29b1527-cb19-40f3-be5c-7241ecb82fd2");
+        private static readonly Guid SwipeTouchCharacteristicGuid = new Guid("f29b1527-cb19-40f3-be5c-7241ecb82fd2");
         private static readonly Guid FlyCharacteristicGuid = new Guid("f29b1526-cb19-40f3-be5c-7241ecb82fd2");
 
         internal static readonly Guid[] GestureCharacteristicGuids =
         {
             ButtonCharacteristicGuid,
-            SwipeCharacteristicGuid,
+            SwipeTouchCharacteristicGuid,
             RotationCharacteristicGuid,
             FlyCharacteristicGuid
         };
@@ -421,7 +430,7 @@ namespace NuimoSDK
         internal static readonly Guid[] NotificationCharacteristicGuids =
         {
             ButtonCharacteristicGuid,
-            SwipeCharacteristicGuid,
+            SwipeTouchCharacteristicGuid,
             RotationCharacteristicGuid,
             FlyCharacteristicGuid,
             BatteryCharacteristicGuid
