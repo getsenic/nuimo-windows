@@ -23,7 +23,7 @@ namespace NuimoSDK
         event Action<INuimoController, NuimoColor> ColorRead;
         event Action<INuimoController> LedMatrixDisplayed;
         event Action<INuimoController, int> BatteryPercentageChanged;
-         event Action<INuimoController, object> HeartbeatReceived;
+        event Action<INuimoController, object> HeartbeatReceived;
         event Action<INuimoController, NuimoGestureEvent> GestureEventOccurred;
         event Action<INuimoController, NuimoGestureEvent> ThrottledGestureEventOccurred;
 
