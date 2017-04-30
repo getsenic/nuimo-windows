@@ -109,11 +109,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="NuimoBluetoothController.cs" />
-    <Compile Include="INuimoController.cs" />
-    <Compile Include="NuimoBuiltinLedMatrix.cs" />
-    <Compile Include="NuimoColor.cs" />
-    <Compile Include="NuimoGestureEvent.cs" />
-    <Compile Include="NuimoLedMatrix.cs" />
     <Compile Include="PairedNuimoManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\NuimoSDK.rd.xml" />
@@ -122,6 +117,12 @@
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>5.3.3</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NuimoSDK.Core\NuimoSDK.Core.csproj">
+      <Project>{7f882042-c837-44be-9f38-4f3391044d9e}</Project>
+      <Name>NuimoSDK.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
