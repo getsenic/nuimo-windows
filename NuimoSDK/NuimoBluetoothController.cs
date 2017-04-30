@@ -50,8 +50,10 @@ namespace NuimoSDK
         public bool SupportsFlySensorCalibration =>
             _gattCharacteristicsForGuid.ContainsKey(CharacteristicsGuids.FlySensorCalibrationCharacteristicGuid);
 
-
-        public string Identifier => _bluetoothLeDevice.DeviceId.Substring(14, 12);
+        /// <summary>
+        /// Return the MAC address part of the device identifier
+        /// </summary>
+        public string Identifier => _deviceId.Substring(23, 35);
         public float MatrixBrightness { get; set; } = 1.0f;
 
         private TimeSpan _heartbeatInterval;
@@ -445,8 +447,6 @@ namespace NuimoSDK
             {
                 case 0: return new NuimoGestureEvent(NuimoGesture.FlyLeft, value);
                 case 1: return new NuimoGestureEvent(NuimoGesture.FlyRight, value);
-                case 2: return new NuimoGestureEvent(NuimoGesture.FlyTowards, value);
-                case 3: return new NuimoGestureEvent(NuimoGesture.FlyBackwards, value);
                 case 4:
                     return new NuimoGestureEvent(NuimoGesture.FlyUpDown, changedValue.CharacteristicValue.ToArray()[1]);
                 default: return null;

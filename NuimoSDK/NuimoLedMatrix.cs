@@ -10,7 +10,7 @@ namespace NuimoSDK
 
         public NuimoLedMatrix()
         {
-            Leds = Enumerable.Range(0, 81).Select(x => false).ToArray();
+            Leds = new bool[LedCount];
         }
 
         public NuimoLedMatrix(string pattern)

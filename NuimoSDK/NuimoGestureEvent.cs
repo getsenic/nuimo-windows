@@ -23,28 +23,25 @@ namespace NuimoSDK
         SwipeDown,
         TouchLeft,
         TouchRight,
-        //TouchTop seems not to work
+        
+        /// <remarks>
+        /// Reserved for future use
+        /// </remarks>
         TouchTop,
         TouchBottom,
+
         LongTouchLeft,
         LongTouchRight,
-        //LongTouchTop seems not to work
+
+        /// <remarks>
+        /// Reserved for future use
+        /// </remarks>
         LongTouchTop,
         LongTouchBottom,
+
         FlyLeft,
         FlyRight,
-        //Removed from firmware?
-        FlyBackwards,
-        //Removed from firmware?
-        FlyTowards,
+        
         FlyUpDown
-    }
-
-    public enum NuimoColor
-    {
-        Unknown,
-        Black,
-        //TODO White or Silver?
-        Silver
     }
 }
