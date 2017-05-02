@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 
@@ -9,12 +11,51 @@ namespace NuimoSDK
 {
     public class PairedNuimoManager
     {
+        private readonly DeviceWatcher _deviceWatcher;
+
+        public PairedNuimoManager()
+        {
+            _deviceWatcher =
+                DeviceInformation.CreateWatcher(
+                    BluetoothLEDevice.GetDeviceSelectorFromDeviceName("Nuimo"),
+                    null,
+                    DeviceInformationKind.AssociationEndpoint);
+
+            _deviceWatcher.Added += _deviceWatcher_Added;
+            _deviceWatcher.Removed += _deviceWatcher_Removed;
+        }
+
+        public event Action<INuimoController> NuimoFound;
+        public event Action<INuimoController> NuimoLost;
+
+        private void _deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            Debug.WriteLine("TODO: device removed");
+        }
+
+        private async void _deviceWatcher_Added(DeviceWatcher sender, DeviceInformation deviceInformation)
+        {
+            var nuimo = new NuimoBluetoothController(deviceInformation.Id) as INuimoController;
+            NuimoFound?.Invoke(nuimo);
+        }
+
+        public void StartWatching()
+        {
+            _deviceWatcher.Start();
+        }
+
+        public void StopWatching()
+        {
+            _deviceWatcher.Stop();
+        }
+
         public async Task<IEnumerable<INuimoController>> ListPairedNuimosAsync()
         {
             return await Task.WhenAll(
-                (await DeviceInformation.FindAllAsync(GattDeviceService.GetDeviceSelectorFromUuid(ServiceGuids.LedMatrixServiceGuid), null))
-                    .Select(async deviceInformation => (await GattDeviceService.FromIdAsync(deviceInformation.Id)).Device)
-                    .Select(async device => new NuimoBluetoothController(await device) as INuimoController)
+                (await DeviceInformation.FindAllAsync(
+                    GattDeviceService.GetDeviceSelectorFromUuid(ServiceGuids.NuimoServiceGuid), null))
+                .Select(async deviceInformation =>
+                    new NuimoBluetoothController(deviceInformation.Id) as INuimoController)
             );
         }
     }
